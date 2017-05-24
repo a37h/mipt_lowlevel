@@ -39,24 +39,34 @@ void* Alloc_in_shm(int shmid, int size, char* address)
 
 
 
-int main (int argc, char **argv){
-
+int main (int argc, char **argv) {
     int m;
     printf ("How big plaing field do you want to get (m*m)?\nPlease, enter 'm': ");
     scanf ("%u", &m);
+    m = m+2;
+
 
     int shmid1;                 // shared memory id
-    int *ptr1 = (int *) Alloc_in_shm(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
+    int **ptr1 = (int **) Alloc_in_shm(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
 
     int shmid2;
-    int *ptr2 = (int *) Alloc_in_shm(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
-
+    int **ptr2 = (int **) Alloc_in_shm(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
 
     int shmid3;
     struct Qsem* ptr3 = (struct Qsem*) Alloc_in_shm(shmid3, sizeof(*ptr3), "/home/quasar/shmstuff/shm3");
 
-    fill_randomization(ptr1,m);
+//    int iz;
+//
+//    for (iz = 0; iz < m*m; iz++) {
+//        ptr1[iz] = iz;
+//        ptr2[iz] = iz;
+//    }
+//
+//    show_matrix(ptr1,m);
+//    show_matrix(ptr2,m);
 
+
+    fill_randomization(ptr1,m);
 
     int i = 0;
     sem_t *sem1, *sem2, *sem3;
@@ -92,10 +102,16 @@ int main (int argc, char **argv){
         else if (pid == 0) break; }
 
     int myleftborder, myrightborder, mytopborder, mybottomborder;
-    if (i % 2 == 0) { myleftborder = 0; myrightborder = m/2; }              // map looks like this
-    else { myleftborder = m/2+1; myrightborder = m-1; }                                     // 0 1
-    if (i < 2) { mytopborder = 0; mybottomborder = m/2; }                                   // 2 3
-    else { mytopborder = m/2+1; mybottomborder = m-1; }
+    if (i % 2 == 0) { myleftborder = 1; myrightborder = m/2+1; }              // map looks like this
+    else { myleftborder = m/2+2; myrightborder = m; }                                     // 0 1
+    if (i < 2) { mytopborder = 1; mybottomborder = m/2+1; }                                   // 2 3
+    else { mytopborder = m/2+2; mybottomborder = m; }
+//
+//    int kaka;
+//    for (kaka = 0; kaka < m*m; kaka++) {
+//        ptr1[kaka] = 7;
+//        ptr2[kaka] = 8;
+//    }
 
 /******************************************************/
 /******************   PARENT PROCESS   ****************/
@@ -141,15 +157,12 @@ int main (int argc, char **argv){
 //            {
 //                for (int beta = mytopborder; beta <= mybottomborder; ++beta)
 //                {
-//                    int Amount_of_neighbours = foo(ptr1,alpha,beta,m,sem3);
-//                    if (Amount_of_neighbours < 2 || Amount_of_neighbours > 3) ptr2[alpha*m+alpha]=0;
-//                    else if (Amount_of_neighbours == 2) ptr2[alpha*m+alpha]=ptr1[alpha*m+alpha];
+//                    int Amount_of_neighbours = foo(ptr1,alpha,beta,m);
+//                    if (Amount_of_neighbours < 2 || Amount_of_neighbours > 3) ptr2[alpha*m+beta]=0;
+//                    else if (Amount_of_neighbours == 2) ptr2[alpha*m+beta]=ptr1[alpha*m+beta];
 //                    else ptr2[alpha*m+beta]=1;
 //                }
 //            }
-
-            
-
             Qsem_sem_end(ptr3, ptr1, ptr2, m, &ptr1, &ptr2);
         }
         printf("Proccess %i died\n", i);
@@ -157,9 +170,16 @@ int main (int argc, char **argv){
     }
 }
 
-int foo(int **World, int x, int y, int size, sem_t* sem3)
+int foo(int **matrix, int x, int y, int size)
 {
-    int count = World[x-1][y-1] + World[x-1][y] + World[x][y-1] + World[x-1][y+1];
-    count += World[x+1][y-1] + World[x+1][y] + World[x][y+1] + World[x+1][y+1];
+    int count = 0;
+    count += matrix[(x-1)*size + y - 1];
+    count += matrix[(x-1)*size + y];
+    count += matrix[x*size + y - 1];
+    count += matrix[(x-1)*size + y + 1];
+    count += matrix[(x+1)*size + y - 1];
+    count += matrix[(x+1)*size + y ];
+    count += matrix[x*size + y + 1];
+    count += matrix[(x+1)*size + y + 1];
     return count;
 }
