@@ -24,3 +24,8 @@ char Get_ending_flag(char** World, int size)
     return amount == 0;
 }
 
+void Swap(char ***p1, char ***p2) {
+    char **tmp = *p1;
+    *p1 = *p2;
+    *p2 = tmp;
+}

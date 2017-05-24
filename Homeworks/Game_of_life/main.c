@@ -12,7 +12,7 @@
 #include "gol.h"
 
 /******************************************************/
-/******************   PARENT PROCESS   ****************/
+/**************   Semaphore incapsulated  *************/
 /******************************************************/
 
 pthread_mutex_t lock;
@@ -45,22 +45,24 @@ void Qsem_clear1(struct Qsem *qsem){
 }
 
 // Кладем процессы только вошедшие в работу в сон
-void Qsem_sem_end(struct Qsem *qsem){
+void Qsem_sem_end(struct Qsem *qsem, int **matrix, int size){
     pthread_mutex_lock(&lock);
     qsem->amount_of_ended++;
-    if (qsem->amount_of_ended == qsem->value) { Qsem_clear2(qsem); }
+    if (qsem->amount_of_ended == qsem->value) { Qsem_clear2(qsem,matrix,size); }
     sem_wait(qsem->sem2);
     pthread_mutex_unlock(&lock);
 }
 
 // Когда все процессы пришли уснуть (не уснул только тот, что вызывал эту функцию последний)
 // Добавляем в семафор значения, тем самым будим процессы и даем им работать
-void Qsem_clear2(struct Qsem *qsem){
+void Qsem_clear2(struct Qsem *qsem, int **matrix, int size){
     int i = 0;
+    show_matrix(matrix,size);
     for (i = 0; i < qsem->value; i++)
         sem_post(qsem->sem2);
     qsem->amount_of_ended = 0;
     printf("\n\n Each process has ended it's journey --------------------------------- \n\n");
+
 }
 
 int main (int argc, char **argv){
@@ -74,6 +76,7 @@ int main (int argc, char **argv){
     int m;
     printf ("How big plaing field do you want to get (m*m)?\nPlease, enter 'm': ");
     scanf ("%u", &m);
+
 
     int needed_size = m*m*2;
     shmkey = ftok ("/dev/null", 5);
@@ -92,18 +95,29 @@ int main (int argc, char **argv){
     int* ptr2 = p + m*m;
     ptr3 = p + m*m*2;
 
-/**************************** shared memory related stuff *****************************/
+    fill_randomization(ptr1,m);
 
-    int i;                        /*      loop variables          */
+
+/**************************** semaphore and forks related stuff *****************************/
+
+    int i = 0;
     sem_t *sem1;                   /*      synch semaphore         *//*shared */
     sem_t *sem2;
     pid_t pid;                    /*      fork pid                */
     unsigned int n;               /*      fork count              */
     unsigned int value;           /*      semaphore value         */
 
-    printf ("How many processes you want to work (n*n)?\n");
-    printf ("Fork count: ");
-    scanf ("%u", &n);
+//    printf ("How many processes you want to work (n*n)?\n");
+//    printf ("Fork count: ");
+//    scanf ("%u", &n);
+    // knock knock
+    // who's there
+    // no decision in amount of forks is THERE
+    // i will add customisation someday i guess but im not sure
+
+    n = 2;
+
+    // well...
 
     int amount_of_forks = n*n;
     value = amount_of_forks;
@@ -136,9 +150,35 @@ int main (int argc, char **argv){
             break;                  /* child processes */
     }
 
-    /******************************************************/
-    /******************   PARENT PROCESS   ****************/
-    /******************************************************/
+    int myleftborder, myrightborder, mytopborder, mybottomborder;
+    if (i % 2 == 0)
+    {
+        myleftborder = 0;
+        myrightborder = m/2;
+    }
+    else
+    {
+        myleftborder = m/2+1;
+        myrightborder = m-1;
+    }
+    if (i < 2)
+    {
+        mytopborder = 0;
+        mybottomborder = m/2;
+    }
+    else
+    {
+        mytopborder = m/2+1;
+        mybottomborder = m-1;
+    }
+    //map looking something like that:
+    // 0 1
+    // 2 3
+    // numbers = process pid
+
+/******************************************************/
+/******************   PARENT PROCESS   ****************/
+/******************************************************/
     if (pid != 0){
         /* wait for all children to exit */
         while (pid = waitpid (-1, NULL, 0)){
@@ -150,22 +190,7 @@ int main (int argc, char **argv){
 
         printf ("\nShowing ptr1 and ptr2:\n");
 
-        int z = 0;
-        int k = 0;
-        for (z = 0; z < m; z++)
-        {
-            for (k = 0; k < m; k++)
-            {
-                printf("%i ",ptr1[z*m+k]);
-            }
-        }
-        for (z = 0; z < m; z++)
-        {
-            for (k = 0; k < m; k++)
-            {
-                printf("%i ",ptr2[z*m+k]);
-            }
-        }
+        show_matrix(ptr1,m);
 
         /* shared memory detach */
         shmdt (p);
@@ -177,38 +202,28 @@ int main (int argc, char **argv){
         exit (0);
     }
 
-    /******************************************************/
-    /******************   CHILD PROCESS   *****************/
-    /******************************************************/
+/******************************************************/
+/******************   CHILD PROCESS   *****************/
+/******************************************************/
     else{
         int a = 0;
-        for ( a = 0; a < 3; a++)
+        for ( a = 0; a < 10; a++)
         {
             Qsem_sem_start(ptr3);
 //            sleep(1);
-            printf("Child(%d) has done what he had to be having done.\n", i);
+            for(int i = 0; i < m; i++)
+                ptr1[i] = i;
+            printf("Child(%d) has done what he had to be having done. His number: %i\n", i,ptr1[i]);
 
-            int z = 0;
-            int k = 0;
-            for (z = 0; z < m; z++)
-            {
-                for (k = 0; k < m; k++)
-                {
-                    ptr1[i] = 1;
-                    ptr2[i] = -1;
-                }
-            }
+//          Work_over_an_area(ptr1,ptr2,m,myleftborder,myrightborder,mytopborder,mybottomborder);
 
 
-            Qsem_sem_end(ptr3);
+            char **tmp = *ptr1;
+            *ptr1 = *ptr2;
+            *ptr2 = tmp;
+
+            Qsem_sem_end(ptr3, ptr1, m);
         }
         exit(0);
     }
 }
-
-
-//            sleep(1);
-//            ptr1[0] += i * 10;              /* increment *p by 0, 1 or 2 based on i */
-//            ptr2[0] += i * 10000;              /* increment *p by 0, 1 or 2 based on i */
-//            printf("  Child(%d) new value of *ptr1=%d.\n", i, ptr1[0]);
-//            printf("  Child(%d) new value of *ptr2=%d.\n", i, ptr2[0]);

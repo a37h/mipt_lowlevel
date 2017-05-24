@@ -1,5 +1,36 @@
 #include "stdio.h"
 #include <stdlib.h>
+#include <pthread.h>
+
+pthread_mutex_t lock;
+
+void fill_randomization(char** World, int size)
+{
+    time_t t;
+    srand((unsigned) time(&t));
+    int world_space = size*size;
+
+    int i;                        /*      loop variables          */
+    for( i = 0 ; i < world_space*0.2 ; i++ )
+    {
+        World[rand() % world_space] = 1;
+    }
+}
+
+void show_matrix(char **matrix, int size)
+{
+    printf("\n------------------------------------------\n");
+    int i, j;
+    for (i = 0; i < size; i++)
+    {
+        printf("\n");
+        for (j = 0; j < size; j++)
+        {
+            printf("%i ",matrix[i*size+j]);
+        }
+    }
+    printf("\n------------------------------------------\n");
+}
 
 char** Alloc_the_array(int size) {
     char **World;
@@ -42,6 +73,7 @@ char Get_amount_of_neighbours(char** World, int size, int x, int y)
 void Work_over_an_area(char **World, char **New_World, int size,
                        int LB, int  RB, int TB, int BB)
 {
+    pthread_mutex_lock(&lock);
     for (int i = LB; i <= RB; ++i) {
         for (int j = BB; j <= TB; ++j) {
             int Amount_of_neighbours = Get_amount_of_neighbours(World,size,i,j);
@@ -50,9 +82,11 @@ void Work_over_an_area(char **World, char **New_World, int size,
             else New_World[i][j]=1;
         }
     }
+    pthread_mutex_unlock(&lock);
 }
 
 void Swap(char ***p1, char ***p2) {
+
     char **tmp = *p1;
     *p1 = *p2;
     *p2 = tmp;
