@@ -65,20 +65,20 @@ void Qsem_clear2(struct Qsem *qsem, int **matrix, int size){
 
 }
 
-void* alloc1(int shmid1, int neededsize, char* string)
+void* Alloc_in_shm(int shmid, int size, char* address)
 {
-    void *p1;                    // shared variable
-    key_t shmkey1;
-    shmkey1 = ftok(string,5);
-    printf ("shmkey1 for p1 = %d\n", shmkey1);
-    shmid1 = shmget (shmkey1, neededsize, 0644 | IPC_CREAT);
-    if (shmid1 < 0) {
+    void *p;                    // shared variable
+    key_t shmkey;
+    shmkey = ftok(address, 5);
+    printf ("shmkey1 for p1 = %d\n", shmkey);
+    shmid = shmget (shmkey, size, 0644 | IPC_CREAT);
+    if (shmid < 0) {
         perror ("shmget\n");
         exit (1);
     }
-    p1 = (void *) shmat(shmid1, NULL, 0);
+    p = (void *) shmat(shmid, NULL, 0);
     printf ("p1= is allocated in shared memory.\n\n");
-    return p1;
+    return p;
 }
 
 int main (int argc, char **argv){
@@ -90,13 +90,13 @@ int main (int argc, char **argv){
 /**************************** shared memory related stuff *****************************/
 
     int shmid1;                 // shared memory id
-    int **p1 = (int **) alloc1(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
+    int **p1 = (int **) Alloc_in_shm(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
 
     int shmid2;
-    int **p2 = (int **) alloc1(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
+    int **p2 = (int **) Alloc_in_shm(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
 
     int shmid3;
-    struct Qsem* my_sem = (struct Qsem*) alloc1(shmid3, sizeof(*my_sem), "/home/quasar/shmstuff/shm3");
+    struct Qsem* my_sem = (struct Qsem*) Alloc_in_shm(shmid3, sizeof(*my_sem), "/home/quasar/shmstuff/shm3");
 
     int temp;
     for (temp = 0; temp < m*m; temp++)
