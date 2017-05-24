@@ -19,13 +19,6 @@ void fill_randomization(char** World, int size)
 
 void show_matrix(int **p1, int m)
 {
-    int iz;
-    for (iz = 0; iz < 10; iz++)
-    {
-        printf("%i ", p1[iz]);
-    }
-
-
     printf("\n------------------------------------------");
     int i, j;
     for (i = 0; i < m; i++)

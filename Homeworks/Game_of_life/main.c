@@ -73,29 +73,6 @@ int main (int argc, char **argv){
 
 /**************************** shared memory related stuff *****************************/
 
-//
-//    int shmid;              /*      shared memory id        */
-//    int *p;                 /*      shared variable         */
-//    key_t shmkey;
-//    int needed_size = m*m*2;
-//    shmkey = ftok ("/dev/null", 5);
-//    printf ("shmkey for p = %d\n", shmkey);
-//    struct Qsem* ptr3;
-//    shmid = shmget (shmkey, needed_size*sizeof (int)+sizeof(ptr3), 0644 | IPC_CREAT);
-//    if (shmid < 0) {
-//        perror ("shmget\n");
-//        exit (1);
-//    }
-//
-//    p = (int *) shmat (shmid, NULL, 0);   /* attach p to shared memory */
-//    *p = 0;
-//    printf ("p=%d is allocated in shared memory.\n\n", *p);
-//    int* ptr1 = p;
-//    int* ptr2 = p + m*m;
-//    ptr3 = p + m*m*2;
-//
-//    fill_randomization(ptr1,m);
-
     int shmid1;                 // shared memory id
     int **p1;                    // shared variable
     key_t shmkey1;
@@ -109,16 +86,28 @@ int main (int argc, char **argv){
     p1 = (int **) shmat(shmid1, NULL, 0);
     printf ("p1=%d is allocated in shared memory.\n\n", *p1);
 
-    int iz;
+    int shmid2;                 // shared memory id
+    int **p2;                    // shared variable
+    key_t shmkey2;
+    shmkey2 = ftok("/home/quasar/shmstuff/shm2",5);
+    printf ("shmkey2 for p2 = %d\n", shmkey2);
+    shmid2 = shmget (shmkey2, m*m*sizeof (int), 0644 | IPC_CREAT);
+    if (shmid2 < 0) {
+        perror ("shmget\n");
+        exit (1);
+    }
+    p2 = (int **) shmat(shmid2, NULL, 0);
+    printf ("p2=%d is allocated in shared memory.\n\n", *p2);
 
-    for (iz = 0; iz < m*m; iz++)
-        p1[iz] = iz;
-
-    show_matrix(p1,m);
-
-    printf("\n\n");
-
-
+//    int temp;
+//    for (temp = 0; temp < m*m; temp++)
+//    {
+//        p1[temp] = temp;
+//        p2[temp] = temp*3;
+//    }
+//
+//    show_matrix(p1,m);
+//    show_matrix(p2,m);
     return 0;
 
 
