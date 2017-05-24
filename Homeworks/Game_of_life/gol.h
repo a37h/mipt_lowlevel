@@ -17,16 +17,23 @@ void fill_randomization(char** World, int size)
     }
 }
 
-void show_matrix(char **matrix, int size)
+void show_matrix(int **p1, int m)
 {
-    printf("\n------------------------------------------\n");
+    int iz;
+    for (iz = 0; iz < 10; iz++)
+    {
+        printf("%i ", p1[iz]);
+    }
+
+
+    printf("\n------------------------------------------");
     int i, j;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < m; i++)
     {
         printf("\n");
-        for (j = 0; j < size; j++)
+        for (j = 0; j < m; j++)
         {
-            printf("%i ",matrix[i*size+j]);
+            printf("%i ",p1[i*m+j]);
         }
     }
     printf("\n------------------------------------------\n");

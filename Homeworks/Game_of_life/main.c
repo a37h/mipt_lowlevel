@@ -67,163 +67,187 @@ void Qsem_clear2(struct Qsem *qsem, int **matrix, int size){
 
 int main (int argc, char **argv){
 
-/**************************** shared memory related stuff *****************************/
-
-    key_t shmkey;           /*      shared memory key       */
-    int shmid;              /*      shared memory id        */
-    int *p;                 /*      shared variable         */
-
     int m;
     printf ("How big plaing field do you want to get (m*m)?\nPlease, enter 'm': ");
     scanf ("%u", &m);
 
+/**************************** shared memory related stuff *****************************/
 
-    int needed_size = m*m*2;
-    shmkey = ftok ("/dev/null", 5);
-    printf ("shmkey for p = %d\n", shmkey);
-    struct Qsem* ptr3;
-    shmid = shmget (shmkey, needed_size*sizeof (int)+sizeof(ptr3), 0644 | IPC_CREAT);
-    if (shmid < 0) {
+//
+//    int shmid;              /*      shared memory id        */
+//    int *p;                 /*      shared variable         */
+//    key_t shmkey;
+//    int needed_size = m*m*2;
+//    shmkey = ftok ("/dev/null", 5);
+//    printf ("shmkey for p = %d\n", shmkey);
+//    struct Qsem* ptr3;
+//    shmid = shmget (shmkey, needed_size*sizeof (int)+sizeof(ptr3), 0644 | IPC_CREAT);
+//    if (shmid < 0) {
+//        perror ("shmget\n");
+//        exit (1);
+//    }
+//
+//    p = (int *) shmat (shmid, NULL, 0);   /* attach p to shared memory */
+//    *p = 0;
+//    printf ("p=%d is allocated in shared memory.\n\n", *p);
+//    int* ptr1 = p;
+//    int* ptr2 = p + m*m;
+//    ptr3 = p + m*m*2;
+//
+//    fill_randomization(ptr1,m);
+
+    int shmid1;                 // shared memory id
+    int **p1;                    // shared variable
+    key_t shmkey1;
+    shmkey1 = ftok("/home/quasar/shmstuff/shm1",5);
+    printf ("shmkey1 for p1 = %d\n", shmkey1);
+    shmid1 = shmget (shmkey1, m*m*sizeof (int), 0644 | IPC_CREAT);
+    if (shmid1 < 0) {
         perror ("shmget\n");
         exit (1);
     }
+    p1 = (int **) shmat(shmid1, NULL, 0);
+    printf ("p1=%d is allocated in shared memory.\n\n", *p1);
 
-    p = (int *) shmat (shmid, NULL, 0);   /* attach p to shared memory */
-    *p = 0;
-    printf ("p=%d is allocated in shared memory.\n\n", *p);
-    int* ptr1 = p;
-    int* ptr2 = p + m*m;
-    ptr3 = p + m*m*2;
+    int iz;
 
-    fill_randomization(ptr1,m);
+    for (iz = 0; iz < m*m; iz++)
+        p1[iz] = iz;
+
+    show_matrix(p1,m);
+
+    printf("\n\n");
+
+
+    return 0;
 
 
 /**************************** semaphore and forks related stuff *****************************/
-
-    int i = 0;
-    sem_t *sem1;                   /*      synch semaphore         *//*shared */
-    sem_t *sem2;
-    pid_t pid;                    /*      fork pid                */
-    unsigned int n;               /*      fork count              */
-    unsigned int value;           /*      semaphore value         */
-
-//    printf ("How many processes you want to work (n*n)?\n");
-//    printf ("Fork count: ");
-//    scanf ("%u", &n);
-    // knock knock
-    // who's there
-    // no decision in amount of forks is THERE
-    // i will add customisation someday i guess but im not sure
-
-    n = 2;
-
-    // well...
-
-    int amount_of_forks = n*n;
-    value = amount_of_forks;
-
-    /* initialize semaphores for shared processes */
-    sem1 = sem_open ("pSem1", O_CREAT | O_EXCL, 0644, 0);
-    sem2 = sem_open ("pSem2", O_CREAT | O_EXCL, 0644, 0);
-    /* name of semaphore is "pSem", semaphore is reached using this name */
-    sem_unlink ("pSem1");
-    sem_unlink ("pSem2");
-    /* unlink prevents the semaphore existing forever */
-    /* if a crash occurs during the execution         */
-    printf ("semaphores initialized.\n\n");
-
-    ptr3->sem1 = sem1;
-    ptr3->sem2 = sem2;
-    ptr3->value = value;
-    ptr3->amount_of_started = 0;
-    ptr3->amount_of_ended = 0;
-
-    srand(time(NULL));
-    int r = 0;
-    /* fork child processes */
-    for (i = 0; i < amount_of_forks; i++) {
-        pid = fork ();  // should only be called once
-        r = rand();      // returns a pseudo-random integer between 0 and RAND_MAX
-        if (pid < 0)              /* check for error      */
-            printf ("Fork error.\n");
-        else if (pid == 0)
-            break;                  /* child processes */
-    }
-
-    int myleftborder, myrightborder, mytopborder, mybottomborder;
-    if (i % 2 == 0)
-    {
-        myleftborder = 0;
-        myrightborder = m/2;
-    }
-    else
-    {
-        myleftborder = m/2+1;
-        myrightborder = m-1;
-    }
-    if (i < 2)
-    {
-        mytopborder = 0;
-        mybottomborder = m/2;
-    }
-    else
-    {
-        mytopborder = m/2+1;
-        mybottomborder = m-1;
-    }
-    //map looking something like that:
-    // 0 1
-    // 2 3
-    // numbers = process pid
-
-/******************************************************/
-/******************   PARENT PROCESS   ****************/
-/******************************************************/
-    if (pid != 0){
-        /* wait for all children to exit */
-        while (pid = waitpid (-1, NULL, 0)){
-            if (errno == ECHILD)
-                break;
-        }
-
-        printf ("\nParent: All children have exited.\n");
-
-        printf ("\nShowing ptr1 and ptr2:\n");
-
-        show_matrix(ptr1,m);
-
-        /* shared memory detach */
-        shmdt (p);
-        shmctl (shmid, IPC_RMID, 0);
-
-        /* cleanup semaphores */
-        sem_destroy (sem1);
-        sem_destroy (sem2);
-        exit (0);
-    }
-
-/******************************************************/
-/******************   CHILD PROCESS   *****************/
-/******************************************************/
-    else{
-        int a = 0;
-        for ( a = 0; a < 10; a++)
-        {
-            Qsem_sem_start(ptr3);
-//            sleep(1);
-            for(int i = 0; i < m; i++)
-                ptr1[i] = i;
-            printf("Child(%d) has done what he had to be having done. His number: %i\n", i,ptr1[i]);
-
-//          Work_over_an_area(ptr1,ptr2,m,myleftborder,myrightborder,mytopborder,mybottomborder);
-
-
-            char **tmp = *ptr1;
-            *ptr1 = *ptr2;
-            *ptr2 = tmp;
-
-            Qsem_sem_end(ptr3, ptr1, m);
-        }
-        exit(0);
-    }
+//
+//    int i = 0;
+//    sem_t *sem1;                   /*      synch semaphore         *//*shared */
+//    sem_t *sem2;
+//    pid_t pid;                    /*      fork pid                */
+//    unsigned int n;               /*      fork count              */
+//    unsigned int value;           /*      semaphore value         */
+//
+////    printf ("How many processes you want to work (n*n)?\n");
+////    printf ("Fork count: ");
+////    scanf ("%u", &n);
+//    // knock knock
+//    // who's there
+//    // no decision in amount of forks is THERE
+//    // i will add customisation someday i guess but im not sure
+//
+//    n = 2;
+//
+//    // well...
+//
+//    int amount_of_forks = n*n;
+//    value = amount_of_forks;
+//
+//    /* initialize semaphores for shared processes */
+//    sem1 = sem_open ("pSem1", O_CREAT | O_EXCL, 0644, 0);
+//    sem2 = sem_open ("pSem2", O_CREAT | O_EXCL, 0644, 0);
+//    /* name of semaphore is "pSem", semaphore is reached using this name */
+//    sem_unlink ("pSem1");
+//    sem_unlink ("pSem2");
+//    /* unlink prevents the semaphore existing forever */
+//    /* if a crash occurs during the execution         */
+//    printf ("semaphores initialized.\n\n");
+//
+//    ptr3->sem1 = sem1;
+//    ptr3->sem2 = sem2;
+//    ptr3->value = value;
+//    ptr3->amount_of_started = 0;
+//    ptr3->amount_of_ended = 0;
+//
+//    srand(time(NULL));
+//    int r = 0;
+//    /* fork child processes */
+//    for (i = 0; i < amount_of_forks; i++) {
+//        pid = fork ();  // should only be called once
+//        r = rand();      // returns a pseudo-random integer between 0 and RAND_MAX
+//        if (pid < 0)              /* check for error      */
+//            printf ("Fork error.\n");
+//        else if (pid == 0)
+//            break;                  /* child processes */
+//    }
+//
+//    int myleftborder, myrightborder, mytopborder, mybottomborder;
+//    if (i % 2 == 0)
+//    {
+//        myleftborder = 0;
+//        myrightborder = m/2;
+//    }
+//    else
+//    {
+//        myleftborder = m/2+1;
+//        myrightborder = m-1;
+//    }
+//    if (i < 2)
+//    {
+//        mytopborder = 0;
+//        mybottomborder = m/2;
+//    }
+//    else
+//    {
+//        mytopborder = m/2+1;
+//        mybottomborder = m-1;
+//    }
+//    //map looking something like that:
+//    // 0 1
+//    // 2 3
+//    // numbers = process pid
+//
+///******************************************************/
+///******************   PARENT PROCESS   ****************/
+///******************************************************/
+//    if (pid != 0){
+//        /* wait for all children to exit */
+//        while (pid = waitpid (-1, NULL, 0)){
+//            if (errno == ECHILD)
+//                break;
+//        }
+//
+//        printf ("\nParent: All children have exited.\n");
+//
+//        printf ("\nShowing ptr1 and ptr2:\n");
+//
+//        show_matrix(ptr1,m);
+//
+//        /* shared memory detach */
+//        shmdt (p);
+//        shmctl (shmid, IPC_RMID, 0);
+//
+//        /* cleanup semaphores */
+//        sem_destroy (sem1);
+//        sem_destroy (sem2);
+//        exit (0);
+//    }
+//
+///******************************************************/
+///******************   CHILD PROCESS   *****************/
+///******************************************************/
+//    else{
+//        int a = 0;
+//        for ( a = 0; a < 10; a++)
+//        {
+//            Qsem_sem_start(ptr3);
+////            sleep(1);
+//            for(int i = 0; i < m; i++)
+//                ptr1[i] = i;
+//            printf("Child(%d) has done what he had to be having done. His number: %i\n", i,ptr1[i]);
+//
+////          Work_over_an_area(ptr1,ptr2,m,myleftborder,myrightborder,mytopborder,mybottomborder);
+//
+//
+//            char **tmp = *ptr1;
+//            *ptr1 = *ptr2;
+//            *ptr2 = tmp;
+//
+//            Qsem_sem_end(ptr3, ptr1, m);
+//        }
+//        exit(0);
+//    }
 }
