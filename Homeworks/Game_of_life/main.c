@@ -55,15 +55,11 @@ int main (int argc, char **argv){
     int shmid3;
     struct Qsem* ptr3 = (struct Qsem*) Alloc_in_shm(shmid3, sizeof(*ptr3), "/home/quasar/shmstuff/shm3");
 
-        fill_randomization(ptr1,m);
-    ptr1[0] = 5;
-    ptr1[1] = 6;
+    fill_randomization(ptr1,m);
 
-    ptr2[0] = 7;
-    ptr2[1] = 8;
 
     int i = 0;
-    sem_t *sem1, *sem2;
+    sem_t *sem1, *sem2, *sem3;
     pid_t pid;
     unsigned int n, value;
 
@@ -77,8 +73,11 @@ int main (int argc, char **argv){
 
     sem1 = sem_open ("pSem1", O_CREAT | O_EXCL, 0644, 0);
     sem2 = sem_open ("pSem2", O_CREAT | O_EXCL, 0644, 0);
+    sem3 = sem_open ("pSem3", O_CREAT | O_EXCL, 0644, 1);
+    sem_post(sem3);
     sem_unlink ("pSem1");
     sem_unlink ("pSem2");
+    sem_unlink ("pSem3");
     printf ("semaphores initialized.\n\n");
 
     ptr3->sem1 = sem1;
@@ -97,7 +96,6 @@ int main (int argc, char **argv){
     else { myleftborder = m/2+1; myrightborder = m-1; }                                     // 0 1
     if (i < 2) { mytopborder = 0; mybottomborder = m/2; }                                   // 2 3
     else { mytopborder = m/2+1; mybottomborder = m-1; }
-
 
 /******************************************************/
 /******************   PARENT PROCESS   ****************/
@@ -122,6 +120,7 @@ int main (int argc, char **argv){
         /* cleanup semaphores */
         sem_destroy (sem1);
         sem_destroy (sem2);
+        sem_destroy (sem3);
         exit (0);
     }
 
@@ -134,19 +133,33 @@ int main (int argc, char **argv){
         {
             Qsem_sem_start(ptr3);
 
-            printf("Im a child(%d) and my myleftborder = %i,myrightborder = %i,mytopborder = %i,mybottomborder = %i\n", i, myleftborder,myrightborder,mytopborder,mybottomborder);
+            printf("Im a child (%d)\n", i);
 
-//            for (int i = myleftborder; i <= myrightborder; ++i) {
-//                for (int j = mytopborder; j <=  mybottomborder; ++j) {
-//                    int Amount_of_neighbours = Get_amount_of_neighbours(ptr1,m,i,j);
-//                    if (Amount_of_neighbours < 2 || Amount_of_neighbours > 3) ptr2[i*m+j]=0;
-//                    else if (Amount_of_neighbours == 2) ptr2[i*m+j]=ptr1[i*m+j];
-//                    else ptr2[i*m+j]=1;
+            int alpha, beta;
+
+//            for (int alpha = myleftborder; alpha <= myrightborder; ++alpha)
+//            {
+//                for (int beta = mytopborder; beta <= mybottomborder; ++beta)
+//                {
+//                    int Amount_of_neighbours = foo(ptr1,alpha,beta,m,sem3);
+//                    if (Amount_of_neighbours < 2 || Amount_of_neighbours > 3) ptr2[alpha*m+alpha]=0;
+//                    else if (Amount_of_neighbours == 2) ptr2[alpha*m+alpha]=ptr1[alpha*m+alpha];
+//                    else ptr2[alpha*m+beta]=1;
 //                }
 //            }
 
+            
+
             Qsem_sem_end(ptr3, ptr1, ptr2, m, &ptr1, &ptr2);
         }
+        printf("Proccess %i died\n", i);
         exit(0);
     }
+}
+
+int foo(int **World, int x, int y, int size, sem_t* sem3)
+{
+    int count = World[x-1][y-1] + World[x-1][y] + World[x][y-1] + World[x-1][y+1];
+    count += World[x+1][y-1] + World[x+1][y] + World[x][y+1] + World[x+1][y+1];
+    return count;
 }
