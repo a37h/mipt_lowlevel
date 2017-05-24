@@ -46,10 +46,10 @@ int main (int argc, char **argv){
     scanf ("%u", &m);
 
     int shmid1;                 // shared memory id
-    int **ptr1 = (int **) Alloc_in_shm(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
+    int *ptr1 = (int *) Alloc_in_shm(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
 
     int shmid2;
-    int **ptr2 = (int **) Alloc_in_shm(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
+    int *ptr2 = (int *) Alloc_in_shm(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
 
 
     int shmid3;
@@ -145,7 +145,7 @@ int main (int argc, char **argv){
 //                }
 //            }
 
-            Qsem_sem_end(ptr3, ptr1, ptr2, m, ptr1[0], ptr2[0], ptr1, ptr2);
+            Qsem_sem_end(ptr3, ptr1, ptr2, m, ptr1, ptr2);
         }
         exit(0);
     }

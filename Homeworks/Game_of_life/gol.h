@@ -59,7 +59,7 @@ void Work_over_an_area(char **World, char **New_World, int size,
 
 void show_matrix(int **p1, int m)
 {
-    printf("\n------------------------------------------");
+    printf("------------------------------------------");
     int i, j;
     for (i = 0; i < m; i++)
     {
@@ -69,7 +69,7 @@ void show_matrix(int **p1, int m)
             printf("%i ",p1[i*m+j]);
         }
     }
-    printf("\n------------------------------------------");
+    printf("\n------------------------------------------\n");
 }
 void fill_randomization(char** World, int size)
 {
@@ -88,11 +88,4 @@ void fill_randomization(char** World, int size)
     {
         World[rand() % world_space] = 1;
     }
-}
-
-void Swap(int ***p1, int ***p2) {
-    printf("me");
-    int **tmp = *p1;
-    *p1 = *p2;
-    *p2 = tmp;
 }
