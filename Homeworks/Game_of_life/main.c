@@ -145,7 +145,7 @@ int main (int argc, char **argv){
 //                }
 //            }
 
-            Qsem_sem_end(ptr3, ptr1, ptr2, m, ptr1, ptr2);
+            Qsem_sem_end(ptr3, ptr1, ptr2, m, &ptr1, &ptr2);
         }
         exit(0);
     }
