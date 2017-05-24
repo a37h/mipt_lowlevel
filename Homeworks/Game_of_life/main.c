@@ -65,6 +65,22 @@ void Qsem_clear2(struct Qsem *qsem, int **matrix, int size){
 
 }
 
+void* alloc1(int shmid1, int neededsize, char* string)
+{
+    void *p1;                    // shared variable
+    key_t shmkey1;
+    shmkey1 = ftok(string,5);
+    printf ("shmkey1 for p1 = %d\n", shmkey1);
+    shmid1 = shmget (shmkey1, neededsize, 0644 | IPC_CREAT);
+    if (shmid1 < 0) {
+        perror ("shmget\n");
+        exit (1);
+    }
+    p1 = (void *) shmat(shmid1, NULL, 0);
+    printf ("p1= is allocated in shared memory.\n\n");
+    return p1;
+}
+
 int main (int argc, char **argv){
 
     int m;
@@ -74,40 +90,29 @@ int main (int argc, char **argv){
 /**************************** shared memory related stuff *****************************/
 
     int shmid1;                 // shared memory id
-    int **p1;                    // shared variable
-    key_t shmkey1;
-    shmkey1 = ftok("/home/quasar/shmstuff/shm1",5);
-    printf ("shmkey1 for p1 = %d\n", shmkey1);
-    shmid1 = shmget (shmkey1, m*m*sizeof (int), 0644 | IPC_CREAT);
-    if (shmid1 < 0) {
-        perror ("shmget\n");
-        exit (1);
-    }
-    p1 = (int **) shmat(shmid1, NULL, 0);
-    printf ("p1=%d is allocated in shared memory.\n\n", *p1);
+    int **p1 = (int **) alloc1(shmid1, m*m*sizeof (int), "/home/quasar/shmstuff/shm1");
 
-    int shmid2;                 // shared memory id
-    int **p2;                    // shared variable
-    key_t shmkey2;
-    shmkey2 = ftok("/home/quasar/shmstuff/shm2",5);
-    printf ("shmkey2 for p2 = %d\n", shmkey2);
-    shmid2 = shmget (shmkey2, m*m*sizeof (int), 0644 | IPC_CREAT);
-    if (shmid2 < 0) {
-        perror ("shmget\n");
-        exit (1);
-    }
-    p2 = (int **) shmat(shmid2, NULL, 0);
-    printf ("p2=%d is allocated in shared memory.\n\n", *p2);
+    int shmid2;
+    int **p2 = (int **) alloc1(shmid2, m*m*sizeof (int), "/home/quasar/shmstuff/shm2");
 
-//    int temp;
-//    for (temp = 0; temp < m*m; temp++)
-//    {
-//        p1[temp] = temp;
-//        p2[temp] = temp*3;
-//    }
-//
-//    show_matrix(p1,m);
-//    show_matrix(p2,m);
+    int shmid3;
+    struct Qsem* my_sem = (struct Qsem*) alloc1(shmid3, sizeof(*my_sem), "/home/quasar/shmstuff/shm3");
+
+    int temp;
+    for (temp = 0; temp < m*m; temp++)
+    {
+        p1[temp] = temp;
+        p2[temp] = temp*3;
+    }
+
+    show_matrix(p1,m);
+    show_matrix(p2,m);
+
+    shmdt (p1);
+    shmdt (p2);
+    shmctl(shmid1, IPC_RMID, NULL);
+    shmctl(shmid2, IPC_RMID, NULL);
+
     return 0;
 
 
