@@ -20,14 +20,14 @@ char Get_amount_of_neighbours(char** World, int size, int x, int y)
 {
     if (x < 0 || x >= size || y < 0 || y >= size) return 9;
     char count = 0;
-    if ((x!=0) && (y!=0) && (World[x-1][y-1] == 1)) count++;
-    if ((x!=0) && (World[x-1][y] == 1)) count++;
-    if ((x!=0) && (y!=size-1) && (World[x-1][y+1] == 1)) count++;
-    if ((y!=size-1) && (World[x][y+1] == 1)) count++;
-    if ((x!=size-1) && (y!=size-1) && (World[x+1][y+1] == 1)) count++;
-    if ((x!=size-1) && (World[x+1][y] == 1)) count++;
-    if ((x!=size-1) && (y!=0) && (World[x+1][y-1] == 1)) count++;
-    if ((y!=0) && (World[x][y-1] == 1)) count++;
+    if ((x!=0) && (y!=0) && (World[(x-1)*size+y-1] == 1)) count++;
+    if ((x!=0) && (World[(x-1)*size+y] == 1)) count++;
+    if ((x!=0) && (y!=size-1) && (World[(x-1)*size+y+1] == 1)) count++;
+    if ((y!=size-1) && (World[(x)*size+y+1] == 1)) count++;
+    if ((x!=size-1) && (y!=size-1) && (World[(x+1)*size+y+1] == 1)) count++;
+    if ((x!=size-1) && (World[(x+1)*size+y] == 1)) count++;
+    if ((x!=size-1) && (y!=0) && (World[(x+1)*size+y-1] == 1)) count++;
+    if ((y!=0) && (World[(x)*size+y-1] == 1)) count++;
     return count;
 }
 
@@ -69,7 +69,7 @@ void show_matrix(int **p1, int m)
             printf("%i ",p1[i*m+j]);
         }
     }
-    printf("\n------------------------------------------\n\n");
+    printf("\n------------------------------------------");
 }
 void fill_randomization(char** World, int size)
 {
@@ -77,15 +77,22 @@ void fill_randomization(char** World, int size)
     srand((unsigned) time(&t));
     int world_space = size*size;
 
-    int i;                        /*      loop variables          */
+    int i;
+
+    for (i = 0; i < world_space; i++)
+    {
+        World[i] = 0;
+    }
+
     for( i = 0 ; i < world_space*0.2 ; i++ )
     {
         World[rand() % world_space] = 1;
     }
 }
 
-void Swap(char ***p1, char ***p2) {
-    char **tmp = *p1;
+void Swap(int ***p1, int ***p2) {
+    printf("me");
+    int **tmp = *p1;
     *p1 = *p2;
     *p2 = tmp;
 }
