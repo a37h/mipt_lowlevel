@@ -13,3 +13,4 @@ $(TARGETS):
 
 clean:
 	rm -f $(TARGETS)
+	rm -f main

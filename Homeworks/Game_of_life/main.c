@@ -7,9 +7,13 @@
 #include <fcntl.h>          /* O_CREAT, O_EXEC          */
 #include <pthread.h>
 #include <time.h>
-// my includes here
-#include "lib_semaphore.h"
-#include "lib_matrixwork.h"
+
+/*************************************************/
+/******** Next are custom (mine) includes ********/
+#include "lib_semaphore.h"  // Box for semaphore
+#include "lib_matrixwork.h" // All of the matrix funcs
+#include "lib_childfunc.h"  // Child process program
+#include "lib_parentfunc.h" // Parent process program
 
 int main (int argc, char **argv) {
 /*********************************************************************************************************/
@@ -65,50 +69,9 @@ int main (int argc, char **argv) {
         else if (pid == 0) break; }
 
 /*********************************************************************************************************/
-/********************************************* PARENT PROCESS ********************************************/
-    if (pid != 0){
-        /* wait for all children to exit */
-        while (pid = waitpid (-1, NULL, 0)){
-            if (errno == ECHILD)
-                break;
-        }
-        /* shared memory detach */
-        shmdt (ptr1);
-        shmdt (ptr2);
-        shmctl(shmid1, IPC_RMID, NULL);
-        shmctl(shmid2, IPC_RMID, NULL);
-
-        /* cleanup semaphores */
-        sem_destroy (sem1);
-        sem_destroy (sem2);
-
-        printf ("\nParent: All children have exited.\n");
-        exit (0);
-    }
-
-/*********************************************************************************************************/
-/********************************************** CHILD PROCESS ********************************************/
-    else{
-        int myleftborder, myrightborder, mytopborder, mybottomborder;
-        if (i % 2 == 0) { myleftborder = 1; myrightborder = size/2+1; }              // map looks like this
-        else { myleftborder = size/2+2; myrightborder = size; }                                    // 0 1
-        if (i < 2) { mytopborder = 1; mybottomborder = size/2+1; }                                 // 2 3
-        else { mytopborder = size/2+2; mybottomborder = size; }
-
-        int a = 0;
-        for ( a = 0; a < 5; a++)
-        {
-//          Qsem_sem_start(ptr3);
-//          printf("Im a child (%d)\n", i);
-
-            printf("%i  ",a);
-            sleep(1);
-
-//          Qsem_sem_end(ptr3, ptr1, ptr2, size, &ptr1, &ptr2);
-        }
-        printf("Proccess %i died\n", i);
-        exit(0);
-    }
+/******** If (pid!=0) is true, then we go to the parent process func, otherwise child process func *******/
+    if (pid != 0) { Fork_function__parent(ptr1,ptr2,ptr3,sem1,sem2,shmid1,shmid2,shmid3, &pid); }
+    else { Fork_function__child(ptr1, ptr2, ptr3, size, i); }
 
     printf("Error: somehow you ended up there.");
     return 0;
