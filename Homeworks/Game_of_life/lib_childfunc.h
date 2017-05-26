@@ -11,13 +11,10 @@ void Fork_function__child(int* ptr1, int* ptr2, int* ptr3, int size, int i)
     int a = 0;
     for ( a = 0; a < 5; a++)
     {
-//          Qsem_sem_start(ptr3);
-//          printf("Im a child (%d)\n", i);
+        Qsem_sem_start(ptr3);
+        printf("Im a child (%d)\n", i);
 
-        printf("%i  ",a);
-        sleep(1);
-
-//          Qsem_sem_end(ptr3, ptr1, ptr2, size, &ptr1, &ptr2);
+        Qsem_sem_end(ptr3);
     }
     printf("Proccess %i died\n", i);
     exit(0);

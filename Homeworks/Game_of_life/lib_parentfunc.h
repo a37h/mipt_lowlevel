@@ -47,9 +47,16 @@ void Child_processes_exit_checker(void *arg)
     exit (0);
 }
 
+void Child_processses_semaphore_sync_checker(void *arg)
+{
+    printf("\n$-$ ---");
+    struct Qsem *test = (struct Qsem *) arg;
+    printf("\n$-$ %i", test->value);
+}
+//    Qsem_refresh_sem1(test);
+//    Qsem_refresh_sem2(test);
 
-
-void Fork_function__parent(int* ptr1, int* ptr2, int* ptr3, sem_t* sem1, sem_t* sem2,
+void Fork_function__parent(int* ptr1, int* ptr2, struct Qsem* ptr3, sem_t* sem1, sem_t* sem2,
                            int shmid1, int shmid2, int shmid3)
 {
 /*********************************************************************************************************/
@@ -63,14 +70,21 @@ void Fork_function__parent(int* ptr1, int* ptr2, int* ptr3, sem_t* sem1, sem_t* 
     test.shmid1_c = shmid1;
     test.shmid2_c = shmid2;
     test.shmid3_c = shmid3;
-    void *argument_variable = (void *) &test;
-    pthread_t tid;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_create(&tid, &attr, Child_processes_exit_checker, &argument_variable);
+    void *argument_variable1 = (void *) &test;
+    pthread_t tid1;
+    pthread_attr_t attr1;
+    pthread_attr_init(&attr1);
+    pthread_create(&tid1, &attr1, Child_processes_exit_checker, &argument_variable1);
 /*********************************************************************************************************/
 /************ creating a Args_box_for_Cpec and pthread for Child_processes_exit_checker ******************/
-
-    pthread_join(tid, NULL);
+    printf("\n$-$ %i", ptr3->value);
+    void *argument_variable2 = (void *) ptr3;
+    pthread_t tid2;
+    pthread_attr_t attr2;
+    pthread_attr_init(&attr2);
+    pthread_create(&tid2, &attr2, Child_processses_semaphore_sync_checker, argument_variable2);
+/*********************************************************************************************************/
+/********************** not finishing parent process unless some pthread does it *************************/
+    pthread_join(tid1, NULL);
     printf("Error: somehow you ended up there. [lib_parentfunc.h: void Fork_function__parent(...)]");
 }

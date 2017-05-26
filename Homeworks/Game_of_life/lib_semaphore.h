@@ -1,45 +1,60 @@
 struct Qsem {
-    int value; // keeps the amount of processes
-    sem_t *sem1;
-    sem_t *sem2;
-    int counter;
+    int value; // processes total amount
+
+    sem_t* sem1;
     int amount_of_started;
+
+    sem_t* sem2;
     int amount_of_ended;
-} qse;
+
+    int* matrix1;
+    int* matrix2;
+    int size;
+    int** p1;
+    int** p2;
+//    pthread_mutex_t* lock;
+};
 
 void Qsem_sem_start(struct Qsem *qsem){
+//    pthread_mutex_unlock(qsem->lock);
     qsem->amount_of_started++;
-    if (qsem->amount_of_started == qsem->value) { Qsem_clear1(qsem); }
+    printf("%i ", qsem->amount_of_started);
+//    if (qsem->amount_of_started == qsem->value) { Qsem_clear1(qsem); }
     sem_wait(qsem->sem1);
 }
 
-void Qsem_clear1(struct Qsem *qsem){
-    int i = 0;
-    for (i = 0; i < qsem->value; i++)
-        sem_post(qsem->sem1);
-    qsem->amount_of_started = 0;
-
+void Qsem_refresh_sem1(struct Qsem *qsem){
+//    pthread_mutex_lock(qsem->lock);
+    if (qsem->amount_of_started == qsem->value) {
+        int i = 0;
+        for (i = 0; i < qsem->value; i++)
+            sem_post(qsem->sem1);
+        qsem->amount_of_started = 0;
+    }
+//    pthread_mutex_unlock(qsem->lock);
 }
 
-void Qsem_sem_end(struct Qsem *qsem, int **matrix1,int **matrix2, int size, int **p1, int **p2){
+void Qsem_sem_end(struct Qsem *qsem)
+{
+//    pthread_mutex_unlock(qsem->lock);
     qsem->amount_of_ended++;
+    sem_wait(qsem->sem2);
+}
+
+void Qsem_refresh_sem2(struct Qsem *qsem){
+//    pthread_mutex_lock(qsem->lock);
     if (qsem->amount_of_ended == qsem->value) {
-        qsem->counter++;
-        printf("\n   $$$%i$$$   ",qsem->counter);
-        show_matrix(matrix1,size);
-        show_matrix(matrix2,size);
+        printf("\n$$$$");
+//      show_matrix(qsem->matrix1, qsem->size);
+//      show_matrix(qsem->matrix2, qsem->size);
         int i = 0;
         for (i = 0; i < qsem->value; i++)
             sem_post(qsem->sem2);
         qsem->amount_of_ended = 0;
 
-
-        int *tmp = *p1;
-        *p1 = *p2;
-        *p2 = tmp;
+        int *tmp = *qsem->p1;
+        *qsem->p1 = *qsem->p2;
+        *qsem->p2 = tmp;
     }
-    sem_wait(qsem->sem2);
+//    pthread_mutex_unlock(qsem->lock);
 }
-
-// This part should be reworked
-// Semaphores should be controlled by main process
