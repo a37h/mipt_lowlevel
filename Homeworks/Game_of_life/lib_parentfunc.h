@@ -78,11 +78,10 @@ void Fork_function__parent(int* ptr1, int* ptr2, struct Qsem* ptr3, sem_t* sem1,
 /*********************************************************************************************************/
 /************ creating a Args_box_for_Cpec and pthread for Child_processes_exit_checker ******************/
     printf("\n$-$ %i", ptr3->value);
-    void *argument_variable2 = (void *) ptr3;
     pthread_t tid2;
     pthread_attr_t attr2;
     pthread_attr_init(&attr2);
-    pthread_create(&tid2, &attr2, Child_processses_semaphore_sync_checker, argument_variable2);
+    pthread_create(&tid2, &attr2, Child_processses_semaphore_sync_checker, &ptr3);
 /*********************************************************************************************************/
 /********************** not finishing parent process unless some pthread does it *************************/
     pthread_join(tid1, NULL);
