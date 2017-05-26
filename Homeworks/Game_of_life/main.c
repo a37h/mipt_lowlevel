@@ -54,21 +54,12 @@ int main (int argc, char **argv) {
     sem_unlink ("pSem2");
     printf ("semaphores initialized.\n\n");
 
-//    pthread_mutex_t lock_c;
-
     ptr3->sem1 = sem1;
     ptr3->sem2 = sem2;
     ptr3->value = amount_of_forks;
     ptr3->amount_of_started = 0;
     ptr3->amount_of_ended = 0;
-    ptr3->matrix1 = ptr1;
-    ptr3->matrix2 = ptr2;
-    ptr3->p1 = &ptr1;
-    ptr3->p2 = &ptr2;
-    ptr3->size = size;
-//    ptr3->lock = &lock_c;
-//
-//    pthread_mutex_unlock(&lock_c);
+    ptr3->counter = 0;
 
 /*********************************************************************************************************/
 /***************************************** Creating fork processes ***************************************/
