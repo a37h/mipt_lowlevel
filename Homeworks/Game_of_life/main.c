@@ -71,31 +71,12 @@ int main (int argc, char **argv) {
 /*********************************************************************************************************/
 /******** If (pid!=0) is true, then we go to the parent process func, otherwise child process func *******/
     if (pid != 0) {
-        Fork_function__parent(ptr1,ptr2,ptr3,sem1,sem2,shmid1,shmid2,shmid3, &pid);
-
-        while (pid = waitpid (-1, NULL, 0)){
-            if (errno == ECHILD)
-                break;
-        }
-
-        /* shared memory detach */
-        shmdt (ptr1);
-        shmdt (ptr2);
-        shmdt (ptr3);
-        shmctl(shmid1, IPC_RMID, NULL);
-        shmctl(shmid2, IPC_RMID, NULL);
-        shmctl(shmid3, IPC_RMID, NULL);
-        /* cleanup semaphores */
-        sem_destroy (sem1);
-        sem_destroy (sem2);
-        printf ("\nParent: All children have exited.\n");
-        exit (0);
+        Fork_function__parent(ptr1,ptr2,ptr3,sem1,sem2,shmid1,shmid2,shmid3);
     }
-
     else {
         Fork_function__child(ptr1, ptr2, ptr3, size, i);
     }
 
-//    printf("Error: somehow you ended up there.");
-//    return 0;
+    printf("Error: somehow you ended up there. [main.c: int main(void)]");
+    return 0;
 }
