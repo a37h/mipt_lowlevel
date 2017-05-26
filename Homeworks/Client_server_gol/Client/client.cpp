@@ -22,9 +22,12 @@ pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 int socket_id;
     // Some custom includes (uses global variables described earlier)
 #include "Libs/lib_NextGeneration.h"
-#include "Libs/lib_Main_f.h"
+#include "Libs/Worker_function.h"
 
 int main(int argc,char **argv) {
+    if (system("CLS")) system("clear");
+    std::cout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓" << std::endl;
+
 /*****************************************************************************************************/
 /************************************* Connection preparations ***************************************/
     // Establishing a connection to the server
@@ -43,24 +46,30 @@ int main(int argc,char **argv) {
 
 /*****************************************************************************************************/
 /********************************** Establishing a connection ****************************************/
-    if(host_record==NULL) { printf("Can't get address by name '%s'\n",argv[1]); return -1; }
+    if(host_record==NULL) { printf("┃ Can't get address by name '%s'           ┃\n",argv[1]); return -1; }
     server_address.sin_family=AF_INET;
     server_address.sin_port=htons(TCP_PORT_NUMBER);
     /*server_address.sin_addr.s_addr=inet_addr(argv[1]);*/
     memcpy(&server_address.sin_addr.s_addr, host_record->h_addr_list[0], host_record->h_length);
-    printf("Connecting to server...\n");
+    printf("┃ Trying to connect                           ┃\n");
     sock_fd=connect(socket_id, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-    if(sock_fd) { printf("Can't connect to server\n");return -1; }
+    if(sock_fd) { std::cout << "┃ Can not connect to server                   ┃" << std::endl
+    << "┃ Some problem occured. Exit code: -1         ┃" << std::endl
+    << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛" << std::endl; return -1;}
 
 /*****************************************************************************************************/
 /***************************** Connection success, checking for problems *****************************/
     read(socket_id,str,18);
     str[16]='\0';
     if(strcmp(str,"Server. Welcome.")) {
-        printf("Incorrect server invatation\n");
-        printf("Server tells '%s'\n",str);
-        return -1; }
-    printf("Server connected!\n");
+        std::cout << "┃ Can not connect to server                   ┃" << std::endl
+        << "┃ Some problem occured. Exit code: -2         ┃" << std::endl
+        << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛" << std::endl;
+        std::cout << "Error info: '" << str << "'" << std::endl;
+        return -2; }
+    std::cout << "┃ Connected to the server!                    ┃" << std::endl
+    << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛" << std::endl;
+
 /*****************************************************************************************************/
 /***************************************** Reading some inputs ***************************************/
     int area_x0, area_y0, area_x1, area_y1;
@@ -68,9 +77,14 @@ int main(int argc,char **argv) {
     read(socket_id, &area_y0, sizeof(int));
     read(socket_id, &area_x1, sizeof(int));
     read(socket_id, &area_y1, sizeof(int));
-    std::cout << area_x0 << ' ' << area_y0 << ' '
-              <<  area_x1 << ' ' << area_y1 << std::endl;
-    Main_f(area_x0, area_y0, area_x1, area_y1);
+    std::cout << "┏━━━ WORKING AREA ━━━▶" << std::endl;
+    std::cout << "┃ x0: " << area_x0 << "; y0: " << area_y0 << "; " << std::endl;
+    std::cout << "┃ x1: " << area_x1 << "; y1: " << area_y1 << "; " << std::endl;
+    std::cout << "┣━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+
+/*****************************************************************************************************/
+/******************************************* Proceed to work *****************************************/
+    Worker_function(area_x0, area_y0, area_x1, area_y1);
     close(socket_id);
     return 0;
 }
