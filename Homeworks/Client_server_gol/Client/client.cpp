@@ -21,8 +21,8 @@ sem_t *sems[PROC_AMOUNT];
 pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 int socket_id;
     // Some custom includes (uses global variables described earlier)
-#include "Libs/lib_NextGeneration.h"
-#include "Libs/Worker_function.h"
+#include "Libs/lib_SingleWorkerh.h"
+#include "Libs/lib_CreatingForks.h"
 
 int main(int argc,char **argv) {
     if (system("CLS")) system("clear");
@@ -84,7 +84,7 @@ int main(int argc,char **argv) {
 
 /*****************************************************************************************************/
 /******************************************* Proceed to work *****************************************/
-    Worker_function(area_x0, area_y0, area_x1, area_y1);
+    CreatingForks(area_x0, area_y0, area_x1, area_y1);
     close(socket_id);
     return 0;
 }
