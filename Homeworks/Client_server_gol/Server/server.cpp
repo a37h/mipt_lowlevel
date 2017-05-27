@@ -1,58 +1,37 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
-#include <unistd.h>
-
-#include <netdb.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <pthread.h>
-
-#include<iostream>
-#include<iomanip>
+#include <iostream>            // cin cout endl
+#include<iomanip>              // setw
 #include<vector>
-#include<semaphore.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <signal.h>
-#include <cstring>
-
-
+// Tcp connections
+#include <unistd.h>            // read, close, ftruncate, fork, write
+#include <netdb.h>             // socket, gethostbyname, connect...
+// Shared memory related
+#include <sys/mman.h>          // shm_open shm_unlink mmap ...
+#include <fcntl.h>             // O_CREAT O_RDWR (for shm_open)
+// Semaphores
+#include <semaphore.h>         // sem sem_wait sem_signal
+// Client and server same constants
 #include "../Constants.h"
-#define PROC_AMOUNT 4
-
-int* point = NULL;
-int* changed = NULL;
-
-sem_t *sem;
-sem_t *sems[PROC_AMOUNT];
-
-void CreateWorld(std::vector<std::pair<int, int> > vec);
-void PrintWorld();
-void RandomWorld();
-void Main_f(const int conn_amount);
-void NextGeneration(int x0, int y0, int x1, int y1,
-                    int fd, int conn_amount, int iter);
-
-//pthread_mutex_t mutex;
-
-int num_connected = 0;
+// Client constants and global variables
+#include "Libs/GlobalVariables.h"
+// Some custom includes (uses global variables described earlier)
+#include "Libs/lib_MatrixFuncs.h"
+#include "Libs/lib_PrepareConnections.h"
+#include "Libs/lib_ControlWorkers.h"
 
 int main(void)
 {
-    std::cout << "Connections amount (excluding server): ";
+    if (system("CLS")) system("clear");
+    std::cout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+    std::cout << "┃ Connections amount (excluding server): ";
     int conn_amount;
     std::cin >> conn_amount;
     if (conn_amount <= 0) {
-        std::cout << "Error! There must be at least one connection\n";
+        std::cout << "Minimal amount is 1. Error code: -1" << std::endl;
         return -1;
     }
     if (conn_amount*PROC_AMOUNT > WIDTH*HEIGHT) {
-        std::cout << "Error! Too many connections & processes";
-        return -1;
+        std::cout << "Maximal amount is " << WIDTH*HEIGHT << " (size of the playing field). Error code: -2" << std::endl;
+        return -2;
     }
     std::vector<std::pair<int, int> > vec;
     int a, b = 0;
@@ -63,16 +42,20 @@ int main(void)
         exist = false;
         data = open("data", O_CREAT|O_RDWR, 0777);
     } else {
-        std::cout << "Would you continue the last game? [y/n]\n";
+        std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+        std::cout << "┃ Saved field is present, continue? yes(y) or no(n): ";
         std::cin >> x;
         if (x == 'y') {
             data = open("data", O_RDWR, 0777);
+            std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
         } else if (x == 'n') {
             remove("data");
             exist = false;
             data = open("data", O_CREAT|O_RDWR, 0777);
         } else {
-            std::cout << "Wrong letter!";
+            std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+            std::cout << "┃ Something went wrong. Exit code: -3"<< std::endl;
+            std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
             return -1;
         }
     }
@@ -85,28 +68,45 @@ int main(void)
     changed += sizeof(int)*WIDTH*HEIGHT;
 
     if (!exist) {
-        std::cout << "Print [r] to randomize start points. To write it print [w]\n";
+        std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+        std::cout << "┃ For a random field type 'r', custom 'c': ";
         std::cin >> x;
-        if (x == 'w') {
-            std::cout << "Enter points: \nTo stop enter '-1'\n";
+        if (x == 'c') {
+            std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+            std::cout << "┃ Enter points, type negative number to stop." << std::endl;
+            std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl << std::endl;
             while (true) {
                 std::cin >> a;
-                if (a == -1) {
+                if (a < 0) {
                     break;
                 }
                 std::cin >> b;
+                if (b < 0) {
+                    break;
+                }
                 vec.push_back(std::pair<int, int>(a, b));
             }
             CreateWorld(vec);
         }
         else if (x == 'r') {
             RandomWorld();
+            std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+            std::cout << "┃ Game is ready, enter 's' anything to begin" << std::endl;
+            std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶"  << std::endl;
+            while (true)
+            {
+                char temp;
+                std::cin >> temp;
+                if (temp == 's') break;
+            }
         } else {
-            std::cout << "Wrong letter!";
-            return -1;
+            std::cout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+            std::cout << "┃ Something went wrong. Exit code: -3";
+            std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶" << std::endl;
+            return -3;
         }
         system("clear");
-        std::cout << "Start of the world:\n";
+        std::cout << "\n";
         PrintWorld();
     }
     char names[conn_amount + 1];
@@ -153,7 +153,8 @@ int main(void)
         perror("Bind error");
         return -1;
     }
-    std::cout << "Waiting for connections...\n";
+    std::cout << "┏━━━━━━━━━━━━━━━━━━━━━━━▶"  << std::endl;
+    std::cout << "┃ Waiting for connections..." << std::endl;
     listen(socket_id,conn_amount);
 
     for(int i=0;i<conn_amount;i++) {
@@ -193,24 +194,31 @@ int main(void)
             }
             pids[i] = fork();
             if (pids[i] == 0) {
-                NextGeneration(x0, y0, x1, y1, connections[i], conn_amount, i);
+                PrepareConnections(x0, y0, x1, y1, connections[i], conn_amount, i);
                 exit(EXIT_SUCCESS);
             }
-            std::cout << "Connection № " << i << " is established\n";
-
+            std::cout << "┣━━━▶ Worker #" << i << " successfully connected" <<std::endl;
         }
         else {
             break;
         }
     }
     //сервер - конец
-    std::cout << "Pres any button\n";
-    getchar();
-    Main_f(conn_amount);
+    std::cout << "┃ Game is ready, enter 's' anything to begin" << std::endl;
+    std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶"  << std::endl;
+    while (true)
+    {
+        char temp;
+        std::cin >> temp;
+        if (temp == 's') break;
+    }
+    ControlWorkers(conn_amount);
     for (int i = 0; i < conn_amount; i++) {
         wait();
     }
-    std::cout << "\nend of game\n";
+    std::cout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶"  << std::endl;
+    std::cout << "┃ Game has been successfully ended." << std::endl;
+    std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶"  << std::endl;
     for (int i = 0; i <= conn_amount; i++) {
         sem_unlink(&names[i]);
     }
@@ -219,106 +227,4 @@ int main(void)
     close(socket_id);
     return 0;
 
-}
-
-void PrintWorld() {
-    for (int i = 0; i < WIDTH; i++) {
-        std::cout << std::setw(2) << "_";
-    }
-    std::cout << '\n';
-    for (int i = 0; i < HEIGHT; i++) {
-        std::cout << std::setw(2) << "|";
-        for (int j = 0; j < WIDTH; j++) {
-            if (point[i*WIDTH+j]) {
-                std::cout << std::setw(2) << "* ";
-            }
-            else {
-                std::cout << std::setw(2) << " ";
-            }
-        }
-        std::cout << std::setw(2) << "|\n";
-    }
-    for (int i = 0; i < WIDTH; i++) {
-        std::cout << std::setw(2) << "_";
-    }
-    std::cout << '\n';
-    sleep(1);
-}
-
-void CreateWorld(std::vector<std::pair<int, int> > vec) {
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            point[i*WIDTH+j] = 0;
-        }
-    }
-    for (size_t i = 0; i < vec.size(); i++) {
-        point[vec[i].first*WIDTH+vec[i].second] = 1;
-    }
-}
-
-void RandomWorld() {
-    srand(time(0));
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            point[i*WIDTH+j] = rand() % 2;
-            //if (i % 3 != 2 && j % 3 != 2) point[i*WIDTH+j] = 1;
-        }
-    }
-    //point[HEIGHT / 2*WIDTH+WIDTH / 2 - 1] = 1;
-}
-
-void Main_f(const int conn_amount) {
-    *changed = 1;
-    int step = 0;
-    while (true) {
-        for (int i = 0; i < conn_amount; i++) {
-            sem_post(sems[i]);  //начало
-        }
-        for (int i = 0; i < conn_amount; i++) {
-            sem_wait(sem);  //конец
-        }
-        if (*changed == 0) {
-            system("clear");
-            std::cout << "The last " << step << " step:\n";
-            PrintWorld();
-            break;
-        }
-        if (step % 10 == 1) {
-            system("clear");
-            std::cout << "The " << step << " step:\n";
-            PrintWorld();
-        }
-        *changed = 0;
-        step++;
-    }
-    *changed = 2;
-    for (int i = 0; i < conn_amount; i++) {
-        sem_post(sems[i]);
-    }
-}
-
-void NextGeneration(int x0, int y0, int x1, int y1,
-                    int fd, int conn_amount, int iter) {
-    int changed_area;
-    write(fd,"Server. Welcome.\n",18);
-    write(fd, &x0, sizeof(int));
-    write(fd, &y0, sizeof(int));
-    write(fd, &x1, sizeof(int));
-    write(fd, &y1, sizeof(int));
-    write(fd, &conn_amount, sizeof(int));
-    write(fd, &iter, sizeof(int));
-    while (true) {
-        sem_wait(sems[iter]);   //начало
-        write(fd, point, sizeof(int)*WIDTH*HEIGHT);
-        write(fd, changed, sizeof(int));
-        if (*changed == 2) {
-            break;
-        }
-        read(fd, &changed_area, sizeof(int));
-        if (changed_area == 1) {
-            *changed = 1;
-            read(fd, point+y0*WIDTH+x0, sizeof(int)*(y1*WIDTH+x1-y0*WIDTH-x0));
-        }
-        sem_post(sem);  //конец
-    }
 }
