@@ -12,11 +12,11 @@
 // Client and server same constants
 #include "../Constants.h"
 // Client constants and global variables
-#include "Libs/GlobalVariables.h"
+#include "libs/GlobalVariables.h"
 // Some custom includes (uses global variables described earlier)
-#include "Libs/lib_MatrixFuncs.h"
-#include "Libs/lib_PrepareConnections.h"
-#include "Libs/lib_ControlWorkers.h"
+#include "libs/lib_MatrixFuncs.h"
+#include "libs/lib_PrepareConnections.h"
+#include "libs/lib_ControlWorkers.h"
 
 int main(void)
 {

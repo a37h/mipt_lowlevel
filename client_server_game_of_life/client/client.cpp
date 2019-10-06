@@ -11,10 +11,10 @@
     // Client and server same constants
 #include "../Constants.h"
     // Client constants and global variables
-#include "Libs/GlobalVariables.h"
+#include "libs/GlobalVariables.h"
     // Some custom includes (uses global variables described earlier)
-#include "Libs/lib_SingleWorkerh.h"
-#include "Libs/lib_CreatingForks.h"
+#include "libs/lib_SingleWorkerh.h"
+#include "libs/lib_CreatingForks.h"
 /***************************************** Variables part ********************************************/
 /*****************************************************************************************************/
 
